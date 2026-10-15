@@ -1,0 +1,21 @@
+## Visual Studio / .NET
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+*.db
+*.sqlite
+*.pdb
+*.log
+
+## User secrets / local config
+.env
+.env.*
+secrets.json
+appsettings.Development.json
+
+## Git
+.git/

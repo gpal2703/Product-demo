@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Identity.Client" Version="4.91.0" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.3" />
+  </ItemGroup>
+</Project>
