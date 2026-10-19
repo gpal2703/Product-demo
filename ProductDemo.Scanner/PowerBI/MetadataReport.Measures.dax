@@ -1,0 +1,44 @@
+Model Instances (Latest) =
+COUNTROWS ( 'Latest Scan Summary' )
+
+Tables (Latest) =
+SUM ( 'Latest Scan Summary'[TableCount] )
+
+Columns (Latest) =
+SUM ( 'Latest Scan Summary'[ColumnCount] )
+
+Measures (Latest) =
+SUM ( 'Latest Scan Summary'[MeasureCount] )
+
+Expressions (Latest) =
+SUM ( 'Latest Scan Summary'[ExpressionCount] )
+
+Scan Runs =
+DISTINCTCOUNT ( 'Scan History'[ScanRunId] )
+
+Model Scans =
+COUNTROWS ( 'Scan History' )
+
+Measures with DAX =
+CALCULATE (
+    COUNTROWS ( 'Latest Measure Catalog' ),
+    FILTER (
+        'Latest Measure Catalog',
+        NOT ISBLANK ( 'Latest Measure Catalog'[DaxExpression] )
+    )
+)
+
+Hidden Measures =
+CALCULATE (
+    COUNTROWS ( 'Latest Measure Catalog' ),
+    'Latest Measure Catalog'[IsHidden] = TRUE ()
+)
+
+Measures with Description =
+CALCULATE (
+    COUNTROWS ( 'Latest Measure Catalog' ),
+    FILTER (
+        'Latest Measure Catalog',
+        NOT ISBLANK ( 'Latest Measure Catalog'[Description] )
+    )
+)

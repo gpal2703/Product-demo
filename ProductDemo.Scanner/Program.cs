@@ -3,6 +3,32 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
+if (args.Length > 0)
+{
+    if (args[0] != "--load-json" || args.Length > 2)
+    {
+        throw new ArgumentException(
+            "Usage: ProductDemo.Scanner [--load-json [path-to-json-file]]");
+    }
+
+    var inputPath = args.Length == 2 ? args[1] : "scan-result.json";
+    var connectionString = RequiredEnvironmentVariable("SQLMI_CONNECTION_STRING");
+    var environmentName = RequiredEnvironmentVariable("PBI_ENVIRONMENT");
+    var loadWorkspaceId = RequiredEnvironmentVariable("PBI_WORKSPACE_ID");
+    var payload = await File.ReadAllTextAsync(inputPath);
+    var payloadWorkspaceIds = GetWorkspaceIds(payload);
+
+    if (!payloadWorkspaceIds.SetEquals(new[] { loadWorkspaceId }))
+    {
+        throw new InvalidOperationException(
+            $"The {environmentName} payload must contain only configured workspace {loadWorkspaceId}; found {string.Join(", ", payloadWorkspaceIds)}.");
+    }
+
+    await new SqlMetadataLoader(connectionString).LoadAsync(payload, environmentName);
+    Console.WriteLine($"Metadata from {inputPath} loaded to SQL MI for {environmentName}.");
+    return;
+}
+
 var tenantId = RequiredEnvironmentVariable("PBI_TENANT_ID");
 var clientId = RequiredEnvironmentVariable("PBI_CLIENT_ID");
 var clientSecret = RequiredEnvironmentVariable("PBI_CLIENT_SECRET");
@@ -86,13 +112,29 @@ if (string.IsNullOrWhiteSpace(sqlConnectionString))
 }
 else
 {
-    await new SqlMetadataLoader(sqlConnectionString).LoadAsync(resultJson);
-    Console.WriteLine("Metadata loaded to SQL MI.");
+    var environmentName = RequiredEnvironmentVariable("PBI_ENVIRONMENT");
+    await new SqlMetadataLoader(sqlConnectionString).LoadAsync(resultJson, environmentName);
+    Console.WriteLine($"Metadata loaded to SQL MI for {environmentName}.");
 }
 
-static string RequiredEnvironmentVariable(string name) =>
-    Environment.GetEnvironmentVariable(name)
-    ?? throw new InvalidOperationException($"Set the {name} environment variable.");
+static string RequiredEnvironmentVariable(string name)
+{
+    var value = Environment.GetEnvironmentVariable(name);
+    return string.IsNullOrWhiteSpace(value)
+        ? throw new InvalidOperationException($"Set the {name} environment variable.")
+        : value;
+}
+
+static HashSet<string> GetWorkspaceIds(string payload)
+{
+    using var document = JsonDocument.Parse(payload);
+    return document.RootElement
+        .GetProperty("workspaces")
+        .EnumerateArray()
+        .Select(workspace => workspace.GetProperty("id").GetString()
+            ?? throw new InvalidOperationException("A workspace in the scan payload has no ID."))
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+}
 
 static async Task<string> ReadSuccessAsync(HttpResponseMessage response)
 {
